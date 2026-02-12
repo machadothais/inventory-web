@@ -9,6 +9,10 @@ export default function BomEditor({ product, onClose }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const [editingId, setEditingId] = useState(null);
+  const [editQty, setEditQty] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
+
   const productId = product?.id;
 
   async function loadRawMaterials() {
@@ -35,12 +39,15 @@ export default function BomEditor({ product, onClose }) {
   }
 
   useEffect(() => {
+    setEditingId(null);
+    setEditQty("");
     loadAll();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productId]);
 
   const rawMaterialOptions = useMemo(() => {
-    const usedIds = new Set(bomItems.map((it) => it.rawMaterial?.id).filter(Boolean));
+    const usedIds = new Set(
+      bomItems.map((it) => it.rawMaterial?.id).filter(Boolean),
+    );
     return rawMaterials.map((rm) => ({ ...rm, disabled: usedIds.has(rm.id) }));
   }, [rawMaterials, bomItems]);
 
@@ -79,11 +86,56 @@ export default function BomEditor({ product, onClose }) {
     setLoading(true);
     try {
       await api.delete(`/api/products/${productId}/bom/${bomId}`);
+      if (editingId === bomId) {
+        setEditingId(null);
+        setEditQty("");
+      }
       await loadBom();
     } catch (e) {
       setError("Failed to remove BOM item.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  function startEdit(item) {
+    setError("");
+    setEditingId(item.id);
+    setEditQty(String(item.quantityRequired ?? ""));
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditQty("");
+    setError("");
+  }
+
+  async function saveEdit(item) {
+    if (!productId) return;
+
+    const qty = Number(editQty);
+    if (!editQty || Number.isNaN(qty) || qty <= 0) {
+      setError("Quantity must be a number greater than 0.");
+      return;
+    }
+
+    setError("");
+    setSavingEdit(true);
+    try {
+      await api.put(`/api/products/${productId}/bom/${item.id}`, {
+        rawMaterialId: item.rawMaterial?.id,
+        quantityRequired: qty,
+      });
+
+      setEditingId(null);
+      setEditQty("");
+      await loadBom();
+    } catch (e) {
+      const msg =
+        e?.response?.data?.message || "Failed to update BOM item quantity.";
+      setError(msg);
+    } finally {
+      setSavingEdit(false);
     }
   }
 
@@ -107,7 +159,9 @@ export default function BomEditor({ product, onClose }) {
         }}
       >
         <div>
-          <h3 style={{ margin: 0 }} data-cy="bom-title">BOM (Composition)</h3>
+          <h3 style={{ margin: 0 }} data-cy="bom-title">
+            BOM (Composition)
+          </h3>
           <div style={{ fontSize: 12, opacity: 0.7 }} data-cy="bom-product-info">
             Product: <b>{product?.name}</b> ({product?.code})
           </div>
@@ -127,7 +181,11 @@ export default function BomEditor({ product, onClose }) {
         </button>
       </div>
 
-      <form onSubmit={addItem} style={{ display: "grid", gap: 10 }} data-cy="bom-form">
+      <form
+        onSubmit={addItem}
+        style={{ display: "grid", gap: 10 }}
+        data-cy="bom-form"
+      >
         <div
           style={{
             display: "grid",
@@ -141,8 +199,11 @@ export default function BomEditor({ product, onClose }) {
             <select
               data-cy="bom-raw-material-select"
               value={form.rawMaterialId}
-              onChange={(e) => setForm((f) => ({ ...f, rawMaterialId: e.target.value }))}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, rawMaterialId: e.target.value }))
+              }
               style={{ width: "100%", padding: 8 }}
+              disabled={loading || savingEdit}
             >
               <option value="">Select...</option>
               {rawMaterialOptions.map((rm) => (
@@ -154,22 +215,27 @@ export default function BomEditor({ product, onClose }) {
           </div>
 
           <div>
-            <label style={{ fontSize: 12, opacity: 0.7 }}>Quantity required</label>
+            <label style={{ fontSize: 12, opacity: 0.7 }}>
+              Quantity required
+            </label>
             <input
               data-cy="bom-quantity-input"
               type="number"
               step="0.01"
               value={form.quantityRequired}
-              onChange={(e) => setForm((f) => ({ ...f, quantityRequired: e.target.value }))}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, quantityRequired: e.target.value }))
+              }
               placeholder="e.g. 2.5"
               style={{ width: "100%", padding: 8 }}
+              disabled={loading || savingEdit}
             />
           </div>
 
           <button
             data-cy="bom-add"
             type="submit"
-            disabled={loading}
+            disabled={loading || savingEdit}
             style={{
               padding: "10px 12px",
               borderRadius: 10,
@@ -182,7 +248,11 @@ export default function BomEditor({ product, onClose }) {
           </button>
         </div>
 
-        {error && <p data-cy="bom-error" style={{ color: "crimson", margin: 0 }}>{error}</p>}
+        {error && (
+          <p data-cy="bom-error" style={{ color: "crimson", margin: 0 }}>
+            {error}
+          </p>
+        )}
       </form>
 
       <div style={{ height: 14 }} />
@@ -192,7 +262,7 @@ export default function BomEditor({ product, onClose }) {
         <button
           data-cy="bom-refresh"
           onClick={loadAll}
-          disabled={loading}
+          disabled={loading || savingEdit}
           style={{
             padding: "8px 10px",
             borderRadius: 10,
@@ -222,37 +292,115 @@ export default function BomEditor({ product, onClose }) {
               </tr>
             </thead>
             <tbody>
-              {bomItems.map((it) => (
-                <tr key={it.id} style={{ borderTop: "1px solid #f0f0f0" }} data-cy={`bom-row-${it.id}`}>
-                  <td>
-                    <div style={{ fontWeight: 600 }} data-cy="bom-row-name">
-                      {it.rawMaterial?.name ?? "—"}
-                    </div>
-                    <div style={{ fontSize: 12, opacity: 0.7 }} data-cy="bom-row-code">
-                      {it.rawMaterial?.code ?? ""}
-                    </div>
-                  </td>
-                  <td data-cy="bom-row-qty">{it.quantityRequired}</td>
-                  <td align="right">
-                    <button
-                      data-cy={`bom-remove-${it.id}`}
-                      onClick={() => removeItem(it.id)}
-                      style={{
-                        padding: "6px 10px",
-                        borderRadius: 10,
-                        border: "1px solid #ddd",
-                        background: "white",
-                      }}
-                    >
-                      Remove
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {bomItems.map((it) => {
+                const isEditing = editingId === it.id;
+
+                return (
+                  <tr
+                    key={it.id}
+                    style={{ borderTop: "1px solid #f0f0f0" }}
+                    data-cy={`bom-row-${it.id}`}
+                  >
+                    <td>
+                      <div style={{ fontWeight: 600 }} data-cy="bom-row-name">
+                        {it.rawMaterial?.name ?? "—"}
+                      </div>
+                      <div
+                        style={{ fontSize: 12, opacity: 0.7 }}
+                        data-cy="bom-row-code"
+                      >
+                        {it.rawMaterial?.code ?? ""}
+                      </div>
+                    </td>
+
+                    <td data-cy="bom-row-qty">
+                      {isEditing ? (
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={editQty}
+                          onChange={(e) => setEditQty(e.target.value)}
+                          style={{ width: 140, padding: 6 }}
+                          disabled={savingEdit}
+                        />
+                      ) : (
+                        it.quantityRequired
+                      )}
+                    </td>
+
+                    <td align="right">
+                      {isEditing ? (
+                        <div style={{ display: "inline-flex", gap: 8 }}>
+                          <button
+                            onClick={() => saveEdit(it)}
+                            disabled={savingEdit}
+                            style={{
+                              padding: "6px 10px",
+                              borderRadius: 10,
+                              border: "1px solid #0d6efd",
+                              background: "#0d6efd",
+                              color: "white",
+                              cursor: "pointer",
+                            }}
+                            data-cy={`bom-save-${it.id}`}
+                          >
+                            {savingEdit ? "Saving..." : "Save"}
+                          </button>
+
+                          <button
+                            onClick={cancelEdit}
+                            disabled={savingEdit}
+                            style={{
+                              padding: "6px 10px",
+                              borderRadius: 10,
+                              border: "1px solid #ddd",
+                              background: "white",
+                              cursor: "pointer",
+                            }}
+                            data-cy={`bom-cancel-${it.id}`}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <div style={{ display: "inline-flex", gap: 8 }}>
+                          <button
+                            onClick={() => startEdit(it)}
+                            style={{
+                              padding: "6px 10px",
+                              borderRadius: 10,
+                              border: "1px solid #ddd",
+                              background: "white",
+                            }}
+                            data-cy={`bom-edit-${it.id}`}
+                          >
+                            Edit
+                          </button>
+
+                          <button
+                            data-cy={`bom-remove-${it.id}`}
+                            onClick={() => removeItem(it.id)}
+                            style={{
+                              padding: "6px 10px",
+                              borderRadius: 10,
+                              border: "1px solid #ddd",
+                              background: "white",
+                            }}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
 
               {bomItems.length === 0 && (
                 <tr>
-                  <td colSpan="3" data-cy="bom-empty">No BOM items yet.</td>
+                  <td colSpan="3" data-cy="bom-empty">
+                    No BOM items yet.
+                  </td>
                 </tr>
               )}
             </tbody>
