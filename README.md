@@ -1,114 +1,115 @@
-Manufacturing Inventory Web
+# 📦 Inventário de Fabricação Web
 
-React frontend for the Manufacturing Inventory System.
-Provides a responsive UI to manage Products, Raw Materials, BOM (Bill of Materials), and the Production Plan.
+Interface **React** para o Sistema de Inventário de Manufatura.
 
-This application consumes the Quarkus REST API and renders all views client-side.
+Esta aplicação fornece uma interface web responsiva para gerenciar:
 
-✨ Features
-✅ Products
+- Produtos  
+- Matérias-Primas  
+- Lista de Materiais (BOM)  
+- Plano de Produção  
 
-Create and list products
+O frontend consome uma **API REST em Quarkus** e renderiza todas as visualizações no lado do cliente (SPA).
 
-Delete products
+---
 
-Open BOM Editor for each product
+# ✨ Funcionalidades
 
-Fields:
+## ✅ Produtos
 
-code (unique)
+- Criar produtos  
+- Listar produtos  
+- Excluir produtos  
+- Abrir o Editor de Lista de Materiais (BOM) por produto  
 
-name
+**Campos:**
 
-price
+- `code` (único)  
+- `name`  
+- `price`
 
-✅ Raw Materials
+---
 
-Create and list raw materials
+## ✅ Matérias-Primas
 
-Delete raw materials
+- Criar matérias-primas  
+- Listar matérias-primas  
+- Excluir matérias-primas  
 
-Fields:
+**Campos:**
 
-code (unique)
+- `code` (único)  
+- `name`  
+- `stockQuantity`
 
-name
+---
 
-stockQuantity
+## ✅ Lista de Materiais (BOM)
 
-✅ BOM (Bill of Materials)
+Disponível na tela de Produtos:
 
-Inside Products screen:
+- Associar matérias-primas a um produto  
+- Definir quantidade necessária por unidade produzida  
+- Listar itens da BOM  
+- Remover itens da BOM  
+- Bloquear associações duplicadas (materiais já adicionados ficam desativados)
 
-Associate raw materials to a product
+---
 
-Define quantityRequired (consumption per unit produced)
+## ✅ Plano de Produção
 
-List and remove BOM items
+- Calcula quantidades possíveis de produção com base no estoque  
+- Prioriza produtos de maior valor agregado  
+- Exibe valor total esperado da produção
 
-Prevent duplicate associations (already added materials are disabled)
+---
 
-✅ Production Plan
+# 🧰 Tecnologias Utilizadas
 
-Lists producible products and quantities based on stock availability
+- React  
+- Vite  
+- Axios  
+- React Router DOM  
+- Cypress (testes E2E)
 
-Prioritizes higher-value products
+---
 
-Displays total expected production value
+# 🔌 Integração com API
 
-🧰 Tech Stack
+O frontend espera que o backend esteja rodando localmente.
 
-React
-
-Vite
-
-Axios
-
-React Router DOM
-
-Cypress (E2E testing)
-
-🔌 API Integration
-
-The frontend expects the backend running locally.
-
-Default API base URL:
-
+**Base URL padrão:**
 http://localhost:8085
 
 
-Configured in:
+---
 
-src/api/client.js
+# 🚀 Primeiros Passos
 
-🚀 Getting Started
-1️⃣ Install dependencies
+## 1️⃣ Instalar dependências
+
+```bash
 npm install
 
-2️⃣ Run the project
+2️⃣ Executar o projeto
 npm run dev
 
-
-Frontend will be available at:
-
+Frontend disponível em:
 http://localhost:5173
 
-🧪 End-to-End Tests (Cypress)
+🧪 Testes E2E (Cypress)
 
-This project includes a Cypress Happy Path test validating the UI flow end-to-end.
+O projeto inclui um teste Happy Path validando o fluxo completo do usuário.
 
-Run Cypress UI
+Abrir Cypress
 npx cypress open
 
+E2E Tests → happy-path.cy.js
 
-Then select:
+⚠️ Certifique-se de que backend e frontend estejam rodando antes de executar Cypress.
 
-E2E Testing → happy-path.cy.js
+📁 Estrutura do Projeto
 
-
-Make sure backend and frontend are running before executing Cypress.
-
-📁 Project Structure
 inventory-web/
 ├── cypress/
 │   └── e2e/
@@ -126,22 +127,12 @@ inventory-web/
 │   └── main.jsx
 └── package.json
 
-🧠 Notes / Design Decisions
+🧠 Decisões de Design
 
-Backend and frontend are separated (REST API approach)
+Arquitetura frontend/backend desacoplada (API REST)
 
-UI is responsive and works on modern browsers
+SPA responsiva compatível com navegadores modernos
 
-Axios is used for HTTP requests
+Axios para comunicação HTTP
 
-Cypress validates real user flows to ensure integration correctness
-
-✅ Possible Improvements
-
-Edit/update actions for Products and Raw Materials
-
-Better UX (toasts, loading states and confirmations)
-
-Authentication / authorization
-
-CI pipeline running Cypress automatically
+Cypress para validação de fluxos reais de usuário
