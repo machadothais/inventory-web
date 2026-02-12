@@ -30,6 +30,7 @@ function EmptyState({ title, subtitle, tip }) {
     </div>
   );
 }
+
 export default function RawMaterialsPage() {
   const [items, setItems] = useState([]);
   const [form, setForm] = useState({ code: "", name: "", stock: "" });
@@ -37,10 +38,12 @@ export default function RawMaterialsPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [editing, setEditing] = useState(null);
+
   const fmtNumber = useMemo(
     () => new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }),
     [],
   );
+
   async function load() {
     setError("");
     setLoading(true);
@@ -53,9 +56,11 @@ export default function RawMaterialsPage() {
       setLoading(false);
     }
   }
+
   useEffect(() => {
     load();
   }, []);
+
   function startEdit(it) {
     setEditing(it);
     setError("");
@@ -65,11 +70,13 @@ export default function RawMaterialsPage() {
       stock: String(it.stockQuantity ?? 0),
     });
   }
+
   function cancelEdit() {
     setEditing(null);
     setError("");
     setForm({ code: "", name: "", stock: "" });
   }
+
   async function create(e) {
     e.preventDefault();
     setError("");
@@ -78,6 +85,7 @@ export default function RawMaterialsPage() {
       setError("Please fill Code and Name.");
       return;
     }
+
     setSaving(true);
     try {
       await api.post("/api/raw-materials", {
@@ -96,6 +104,7 @@ export default function RawMaterialsPage() {
       setSaving(false);
     }
   }
+
   async function update(e) {
     e.preventDefault();
     setError("");
@@ -106,6 +115,7 @@ export default function RawMaterialsPage() {
       setError("Please fill Code and Name.");
       return;
     }
+
     setSaving(true);
     try {
       await api.put(`/api/raw-materials/${editing.id}`, {
@@ -125,6 +135,7 @@ export default function RawMaterialsPage() {
       setSaving(false);
     }
   }
+
   async function remove(id) {
     setError("");
     try {
@@ -135,6 +146,7 @@ export default function RawMaterialsPage() {
       setError("Failed to delete raw material.");
     }
   }
+
   const stockBadgeClass = (stock) => {
     const s = Number(stock || 0);
     if (s <= 0) return "bg-danger-subtle text-danger";
@@ -150,14 +162,14 @@ export default function RawMaterialsPage() {
             <i className="bi bi-boxes text-primary" />
             <h3 className="mb-0 fw-bold">Raw Materials</h3>
           </div>
-          <div className="text-muted">
-            Manage stock and materials used in BOM.
-          </div>
+          <div className="text-muted">Manage stock and materials used in BOM.</div>
         </div>
+
         <button
           className="btn btn-outline-primary rounded-3 px-3"
           onClick={load}
           disabled={loading}
+          data-cy="rm-refresh"
         >
           {loading ? (
             <>
@@ -172,23 +184,24 @@ export default function RawMaterialsPage() {
           )}
         </button>
       </div>
+
       {error && (
         <div
           className="alert alert-danger rounded-4 d-flex align-items-start gap-2"
           role="alert"
+          data-cy="rm-error"
         >
           <i className="bi bi-exclamation-triangle mt-1" />
           <div>{error}</div>
         </div>
       )}
-      <div className="card border-0 shadow-sm rounded-4">
+
+      <div className="card border-0 shadow-sm rounded-4" data-cy="rm-form-card">
         <div className="card-body p-4">
           <div className="d-flex align-items-center justify-content-between gap-2 mb-3">
             <div className="d-flex align-items-center gap-2">
               <i
-                className={`bi ${
-                  editing ? "bi-pencil-square" : "bi-plus-circle"
-                } text-primary`}
+                className={`bi ${editing ? "bi-pencil-square" : "bi-plus-circle"} text-primary`}
               />
               <h5 className="mb-0 fw-semibold">
                 {editing ? "Edit Raw Material" : "Create Raw Material"}
@@ -201,43 +214,44 @@ export default function RawMaterialsPage() {
               </span>
             )}
           </div>
+
           <form onSubmit={editing ? update : create}>
             <div className="row g-3">
               <div className="col-md-3">
                 <label className="form-label">Code</label>
                 <input
                   className="form-control"
+                  data-cy="rm-code"
                   value={form.code}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, code: e.target.value }))
-                  }
+                  onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))}
                   placeholder="RM01"
                 />
               </div>
+
               <div className="col-md-6">
                 <label className="form-label">Name</label>
                 <input
                   className="form-control"
+                  data-cy="rm-name"
                   value={form.name}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, name: e.target.value }))
-                  }
+                  onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                   placeholder="Material name"
                 />
               </div>
+
               <div className="col-md-3">
                 <label className="form-label">Stock</label>
                 <input
                   className="form-control"
+                  data-cy="rm-stock"
                   type="number"
                   value={form.stock}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, stock: e.target.value }))
-                  }
+                  onChange={(e) => setForm((f) => ({ ...f, stock: e.target.value }))}
                   placeholder="0"
                 />
               </div>
             </div>
+
             <div className="d-flex justify-content-end mt-4 gap-2">
               {editing && (
                 <button
@@ -245,15 +259,17 @@ export default function RawMaterialsPage() {
                   className="btn btn-outline-secondary rounded-3 px-4"
                   onClick={cancelEdit}
                   disabled={saving}
+                  data-cy="rm-cancel"
                 >
                   <i className="bi bi-x-circle me-2" />
                   Cancel
                 </button>
               )}
+
               <button
-                className={`btn ${
-                  editing ? "btn-primary" : "btn-success"
-                } rounded-3 px-4`}
+                type="submit"
+                data-cy="rm-save"
+                className={`btn ${editing ? "btn-primary" : "btn-success"} rounded-3 px-4`}
                 disabled={saving}
               >
                 {saving ? (
@@ -264,9 +280,7 @@ export default function RawMaterialsPage() {
                 ) : (
                   <>
                     <i
-                      className={`bi ${
-                        editing ? "bi-pencil-square" : "bi-check2-circle"
-                      } me-2`}
+                      className={`bi ${editing ? "bi-pencil-square" : "bi-check2-circle"} me-2`}
                     />
                     {editing ? "Update" : "Save"}
                   </>
@@ -276,7 +290,8 @@ export default function RawMaterialsPage() {
           </form>
         </div>
       </div>
-      <div className="card border-0 shadow-sm rounded-4">
+
+      <div className="card border-0 shadow-sm rounded-4" data-cy="rm-list-card">
         <div className="card-body p-0">
           <div className="px-4 pt-4 pb-3 d-flex align-items-center justify-content-between">
             <div className="d-flex align-items-center gap-2">
@@ -284,7 +299,10 @@ export default function RawMaterialsPage() {
               <h5 className="mb-0 fw-semibold">Raw Materials List</h5>
             </div>
 
-            <span className="badge rounded-pill bg-secondary-subtle text-secondary px-3 py-2">
+            <span
+              className="badge rounded-pill bg-secondary-subtle text-secondary px-3 py-2"
+              data-cy="rm-count"
+            >
               {items.length} items
             </span>
           </div>
@@ -302,7 +320,7 @@ export default function RawMaterialsPage() {
             />
           ) : (
             <div className="table-responsive">
-              <table className="table table-hover align-middle mb-0">
+              <table className="table table-hover align-middle mb-0" data-cy="rm-table">
                 <thead className="table-light">
                   <tr>
                     <th style={{ width: 80 }}>ID</th>
@@ -317,7 +335,7 @@ export default function RawMaterialsPage() {
 
                 <tbody>
                   {items.map((it) => (
-                    <tr key={it.id}>
+                    <tr key={it.id} data-cy={`rm-row-${it.code}`}>
                       <td className="text-muted">{it.id}</td>
                       <td>
                         <span className="badge rounded-pill bg-primary-subtle text-primary px-3 py-2">
@@ -326,12 +344,9 @@ export default function RawMaterialsPage() {
                       </td>
                       <td className="fw-semibold">{it.name}</td>
 
-                      {/* ✅ FIX: era it.stock */}
                       <td className="text-end">
                         <span
-                          className={`badge rounded-pill ${stockBadgeClass(
-                            it.stockQuantity,
-                          )} px-3 py-2`}
+                          className={`badge rounded-pill ${stockBadgeClass(it.stockQuantity)} px-3 py-2`}
                         >
                           <i className="bi bi-graph-up me-2" />
                           {fmtNumber.format(Number(it.stockQuantity || 0))}
@@ -343,6 +358,7 @@ export default function RawMaterialsPage() {
                           <button
                             className="btn btn-sm btn-outline-primary rounded-3"
                             onClick={() => startEdit(it)}
+                            data-cy={`rm-edit-${it.code}`}
                           >
                             <i className="bi bi-pencil me-2" />
                             Edit
@@ -351,6 +367,7 @@ export default function RawMaterialsPage() {
                           <button
                             className="btn btn-sm btn-outline-danger rounded-3"
                             onClick={() => remove(it.id)}
+                            data-cy={`rm-delete-${it.code}`}
                           >
                             <i className="bi bi-trash3 me-2" />
                             Delete

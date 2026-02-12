@@ -6,10 +6,17 @@ describe("Happy Path - Production Flow", () => {
 
     cy.visit("/raw-materials");
 
-    cy.get("input[placeholder^='Code']", { timeout: 15000 }).clear().type(rmCode);
-    cy.get("input[placeholder^='Name']").clear().type("Steel");
-    cy.get("input[placeholder^='Stock']").clear().type("100");
-    cy.contains(/^Save$/i).click();
+    cy.get('[data-cy="rm-code"]', { timeout: 15000 })
+      .should("be.visible")
+      .clear()
+      .type(rmCode);
+
+    cy.get('[data-cy="rm-name"]').clear().type("Steel");
+    cy.get('[data-cy="rm-stock"]').clear().type("100");
+    cy.get('[data-cy="rm-save"]').click();
+
+    // opcional mas recomendado: garante que entrou na lista
+    cy.get(`[data-cy="rm-row-${rmCode}"]`, { timeout: 15000 }).should("exist");
 
     cy.visit("/products");
 
