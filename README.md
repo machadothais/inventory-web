@@ -90,6 +90,7 @@ http://localhost:8085
 
 ```bash
 npm install
+npm install react-bootstrap bootstrap
 
 2️⃣ Executar o projeto
 npm run dev
